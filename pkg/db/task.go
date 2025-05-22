@@ -57,7 +57,7 @@ func GetTask(id string) (*Task, error) {
 		id,
 	).Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
 	if err != nil {
-		return nil, fmt.Errorf("задача не найдена")
+		return nil, err
 	}
 	return task, nil
 }
@@ -66,7 +66,7 @@ func UpdateTask(task *Task) error {
 	query := `UPDATE scheduler SET date = ?, title = ?, comment = ?, repeat = ? WHERE id = ?`
 	res, err := db.Exec(query, task.Date, task.Title, task.Comment, task.Repeat, task.ID)
 	if err != nil {
-		return fmt.Errorf("ошибка при обновлении задачи: %v", err)
+		return fmt.Errorf("update task fail: %v", err)
 	}
 
 	count, err := res.RowsAffected()

@@ -59,6 +59,9 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	}
 }
 func nextDayHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, "wrong method", http.StatusMethodNotAllowed)
+	}
 	err := r.ParseForm()
 	if err != nil {
 		return

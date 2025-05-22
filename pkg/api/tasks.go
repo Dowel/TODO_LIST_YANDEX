@@ -6,6 +6,8 @@ import (
 	"strconv"
 )
 
+const limitConst = 50
+
 type TasksResp struct {
 	Tasks []*db.Task `json:"tasks"`
 }
@@ -13,7 +15,7 @@ type TasksResp struct {
 func tasksHandler(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
-		limit = 50
+		limit = limitConst
 	}
 	tasks, err := db.Tasks(limit)
 	if err != nil {

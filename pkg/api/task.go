@@ -28,20 +28,23 @@ func taskHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		deleteTaskHandler(w, r)
 	default:
-		writeError(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		writeError(w, "method now allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 func addTaskHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, "wrong method", http.StatusMethodNotAllowed)
+	}
 	var task db.Task
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
-		writeError(w, "Ошибка десериализации JSON", http.StatusBadRequest)
+		writeError(w, "decode fail", http.StatusBadRequest)
 		return
 	}
 
 	if task.Title == "" {
-		writeError(w, "Не указан заголовок задачи", http.StatusBadRequest)
+		writeError(w, "title is empty", http.StatusBadRequest)
 		return
 	}
 
@@ -53,7 +56,7 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, err := db.AddTask(&task)
 	if err != nil {
-		writeError(w, "Ошибка при добавлении задачи", http.StatusInternalServerError)
+		writeError(w, "addtask fail", http.StatusInternalServerError)
 		return
 	}
 
@@ -61,6 +64,9 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getTaskHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, "wrong method", http.StatusMethodNotAllowed)
+	}
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		writeError(w, "Не указан идентификатор", http.StatusBadRequest)
@@ -77,6 +83,9 @@ func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		writeError(w, "wrong method", http.StatusMethodNotAllowed)
+	}
 	var task db.Task
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
@@ -110,6 +119,9 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodDelete {
+		writeError(w, "wrong method", http.StatusMethodNotAllowed)
+	}
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		writeError(w, "Не указан идентификатор", http.StatusBadRequest)
@@ -126,15 +138,18 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		writeError(w, "wrong method", http.StatusMethodNotAllowed)
+	}
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		writeError(w, "Не указан идентификатор", http.StatusBadRequest)
+		writeError(w, "id is empty", http.StatusBadRequest)
 		return
 	}
 
 	task, err := db.GetTask(id)
 	if err != nil {
-		writeError(w, "Задача не найдена", http.StatusNotFound)
+		writeError(w, "task not found", http.StatusNotFound)
 		return
 	}
 
@@ -142,7 +157,7 @@ func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 		// One-time task - delete it
 		err = db.DeleteTask(id)
 		if err != nil {
-			writeError(w, "Ошибка при удалении задачи", http.StatusInternalServerError)
+			writeError(w, "delete task fail", http.StatusInternalServerError)
 			return
 		}
 	} else {
@@ -150,13 +165,13 @@ func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 		now := time.Now()
 		next, err := NextDate(now, task.Date, task.Repeat)
 		if err != nil {
-			writeError(w, "Ошибка при расчете следующей даты", http.StatusInternalServerError)
+			writeError(w, "nextdate error", http.StatusInternalServerError)
 			return
 		}
 
 		err = db.UpdateDate(id, next)
 		if err != nil {
-			writeError(w, "Ошибка при обновлении даты задачи", http.StatusInternalServerError)
+			writeError(w, "update task fail", http.StatusInternalServerError)
 			return
 		}
 	}
@@ -174,7 +189,7 @@ func checkDate(task *db.Task) error {
 
 	t, err := time.Parse("20060102", task.Date)
 	if err != nil {
-		return fmt.Errorf("Неверный формат даты")
+		return fmt.Errorf("data is invalid")
 	}
 
 	if !afterNow(t, now) {
@@ -183,7 +198,7 @@ func checkDate(task *db.Task) error {
 		} else {
 			next, err := NextDate(now, task.Date, task.Repeat)
 			if err != nil {
-				return fmt.Errorf("Неверный формат правила повторения")
+				return fmt.Errorf("repeat is invalid")
 			}
 			task.Date = next
 		}

@@ -7,8 +7,7 @@ import (
 	"os"
 )
 
-func Run() {
-	fmt.Println("Запуск сервера!")
+func Run() error {
 
 	// Получаем порт из переменной окружения или используем порт по умолчанию
 	port := os.Getenv("TODO_PORT")
@@ -20,10 +19,12 @@ func Run() {
 			port = ":" + port
 		}
 	}
+	fmt.Println("Start server! port", port)
 
 	api.Init()
 	err := http.ListenAndServe(port, nil)
 	if err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }

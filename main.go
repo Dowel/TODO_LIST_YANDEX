@@ -17,5 +17,8 @@ func main() {
 
 	db.Init(dbFile)
 	defer db.Close()
-	server.Run()
+	err := server.Run()
+	if err != nil {
+		panic(err)
+	}
 }
